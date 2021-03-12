@@ -1,0 +1,130 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Currency Converter Example</title>
+    <script type="text/javascript">
+        //<![CDATA[
+        function showDate() {
+            document.getElementById("date_block").style.display = 'block';
+            document.getElementById("date_label").style.display = 'block';
+        }
+        function hideDate() {
+            document.getElementById("date_block").style.display = 'none';
+            document.getElementById("date_label").style.display = 'none';
+            document.getElementById("errorMessage").innerHTML = "";
+        }
+        function validateForm() {
+            var errorMessageElement = document.getElementById("errorMessage");
+            var date = document.getElementById("date").value;
+            var type = document.querySelector('input[name="type"]:checked').value;
+            if(!date && type == "history") {
+                errorMessageElement.innerHTML = "The 'date' field should be filled for 'history' type. Please change and try again";
+                return false;
+            } else {
+                return true;
+            }
+        }
+        //]]>
+    </script>
+</head>
+<body>
+<h3>Currency Converter</h3>
+<form action="#" th:action="@{/converter}" th:object="${converterFormModel}" method="post"
+      onsubmit="return validateForm()" >
+    <table>
+        <tr>
+            <td>amount:</td>
+            <td><input type="number" th:field="*{amount}" step="any" min="0" max="99999999999999999999" /></td>
+            <td th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}">Amount Error</td>
+        </tr>
+        <tr>
+            <td>From:</td>
+            <td>
+                <select name="from" th:field="*{from}">
+                    <option th:each="item : ${currencyEnum}" th:value="${item.getCode()}"
+                            th:text="${item.getDescription()}" th:if="${item.getCode() != from}">
+                    </option>
+                    <option th:each="item : ${currencyEnum}" th:value="${item.getCode()}"
+                            th:text="${item.getDescription()}" th:if="${item.getCode() == from}"
+                            selected="selected">
+                    </option>
+                </select>
+            </td>
+            <td th:if="${#fields.hasErrors('from')}" th:errors="*{from}">To Error</td>
+        </tr>
+        <tr>
+            <td>To:</td>
+            <td>
+                <select name="to" th:field="*{to}">
+                    <option th:each="item : ${currencyEnum}" th:value="${item.getCode()}"
+                            th:text="${item.getDescription()}" th:if="${item.getCode() != to}">
+                    </option>
+                    <option th:each="item : ${currencyEnum}" th:value="${item.getCode()}"
+                            th:text="${item.getDescription()}" th:if="${item.getCode() == to}"
+                            selected="selected">
+                    </option>
+                </select>
+            </td>
+            <td th:if="${#fields.hasErrors('to')}" th:errors="*{to}">To Error</td>
+        </tr>
+        <tr>
+            <td>Type:</td>
+            <td>
+                <input type="radio" th:field="*{type}" th:value="current" onclick="hideDate()" />
+                <label th:for="${#ids.prev('type')}" th:text="current">current</label>
+                <input type="radio" th:field="*{type}" th:value="history" onclick="showDate()" />
+                <label th:for="${#ids.prev('type')}" th:text="history">history</label>
+            </td>
+            <td th:if="${#fields.hasErrors('type')}" th:errors="*{type}">To Error</td>
+        </tr>
+        <tr>
+            <td>
+                <div id="date_label" style="display: none">
+                    Date:
+                </div>
+            </td>
+            <td>
+                <div id="date_block" style="display: none">
+                    <input type="date" th:field="*{date}" />
+                </div>
+            </td>
+            <td th:if="${#fields.hasErrors('dataCorrect')}" th:errors="*{dataCorrect}">To Error</td>
+            <td><p id="errorMessage"></p></td>
+        </tr>
+        <tr>
+            <td>
+                <button type="submit">Submit</button>
+            </td>
+        </tr>
+    </table>
+    <h2>
+        <p th:text="${result}"/>
+    </h2>
+</form>
+<span th:text="${error}"></span>
+<form th:action="@{/logout}" method="post">
+    <input type="submit" value="Log out"/>
+</form>
+<h3>Last queries</h3>
+<table border="1">
+    <tr>
+        <td>Amount</td>
+        <td>Currency from</td>
+        <td>Currency to</td>
+        <td>Result</td>
+        <td>Type</td>
+        <td>Date</td>
+    </tr>
+    <th:block th:each="item : ${history}">
+        <tr>
+            <td th:text="${item.getAmount()}">amount</td>
+            <td th:text="${item.getCurrencyFrom()}">currency from</td>
+            <td th:text="${item.getCurrencyTo()}">currency to</td>
+            <td th:text="${item.getStringResult()}">result</td>
+            <td th:text="${item.getRequestType()}">type</td>
+            <td th:text="${item.getRequestDate()}">date</td>
+        </tr>
+    </th:block>
+</table>
+</body>
+</html>
