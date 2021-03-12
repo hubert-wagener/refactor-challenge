@@ -26,6 +26,7 @@ public class CurrencyLayerRestClient implements RestClient {
     private final static String API_ID_PRM = "&access_key=";
     private static final String ERROR_WHILE_GATHERING_INFORMATION = "Error while gathering information from CurrencyLayer services";
 
+    // use these constants and an UriComponentsBuilder to build urls instead of string concatenation
     private final static String URL = "http://www.apilayer.net/api/";
     private final static String LIVE_PATH = "live";
     private final static String LIVE_PARAM_FORMAT = "format";
@@ -34,11 +35,8 @@ public class CurrencyLayerRestClient implements RestClient {
     private final static String API_KEY_PARAM = "access_key";
 
 
-    private final DateConverter dateConverter; //
-
-    private UriComponentsBuilder currencyServiceUriBuilder(){
-        return  UriComponentsBuilder.fromUriString(URL).queryParam(API_KEY_PARAM, API_ID);
-    }
+    // use this to refactor that repeated calendar to string mapping
+    private final DateConverter dateConverter;
 
     public BigDecimal getCurrentExchangeRates(CurrencyEnum currencyFrom, CurrencyEnum currencyTo) {
         return getExchangeRates(currencyFrom, currencyTo, getCurrentRates());
@@ -55,19 +53,14 @@ public class CurrencyLayerRestClient implements RestClient {
     }
 
     public CurrencyLayerRatesContainer getCurrentRates() {
-        final UriComponents uri = currencyServiceUriBuilder()
-                .path(LIVE_PATH)
-                .queryParam(LIVE_PARAM_FORMAT, "1")
-                .build();
-        return getEntity(uri.toUriString(), CurrencyLayerRatesContainer.class);
+        return getEntity(URL_LAST, API_ID, CurrencyLayerRatesContainer.class);
     }
 
     public CurrencyLayerRatesContainer getHistoricalRates(Calendar date) {
-        String dateString = dateConverter.defaultFormat(date);
-        final UriComponents uri = currencyServiceUriBuilder()
-                .path(HISTORY_PATH)
-                .queryParam(HISTORY_PARAM_DATE, dateString).build();
-        return getEntity(uri.toUriString(), CurrencyLayerRatesContainer.class);
+        return getEntity(URL_HISTORY + date.get(Calendar.YEAR) + "-" +
+                        getStringWithLeftPadZero(date.get(Calendar.MONTH) + 1) + "-" +
+                        getStringWithLeftPadZero(date.get(Calendar.DAY_OF_MONTH))
+                , API_ID, CurrencyLayerRatesContainer.class);
     }
 
     private String getStringWithLeftPadZero(int number) {
@@ -85,11 +78,11 @@ public class CurrencyLayerRestClient implements RestClient {
         }
     }
 
-    private static <T> T getEntity(String url, Class<T> entityClass) {
+    private static <T> T getEntity(String url, String api, Class<T> entityClass) {
         Response response = null;
         try {
             Client client = ClientBuilder.newBuilder().build();
-            response = client.target(url).request().get();
+            response = client.target(url + API_ID_PRM + api).request().get();
             return response.readEntity(entityClass);
         } catch (Exception exp) {
             throw new RestClientException(ERROR_WHILE_GATHERING_INFORMATION + ", error: " +
@@ -100,6 +93,4 @@ public class CurrencyLayerRestClient implements RestClient {
             }
         }
     }
-
-
 }
